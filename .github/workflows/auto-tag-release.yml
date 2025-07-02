@@ -34,6 +34,31 @@ jobs:
           
           echo "next_tag=$next" >> $GITHUB_OUTPUT
 
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "prev_tag=$prev_tag" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get PRs merged since last tag
+          if [ -z "${{ steps.prev_tag.outputs.prev_tag }}" ]; then
+            PR_LIST=$(gh pr list --state merged --base production --limit 50 --json number,title,author,mergedAt | jq -r '.[] | select(.title | test("^Release to") | not) | "* #\(.number) \(.title) by @\(.author.login)"')
+          else
+            MERGE_DATE=$(git log -1 --format=%aI ${{ steps.prev_tag.outputs.prev_tag }})
+            PR_LIST=$(gh pr list --state merged --base production --limit 50 --json number,title,author,mergedAt | jq -r --arg date "$MERGE_DATE" '.[] | select(.mergedAt > $date) | select(.title | test("^Release to") | not) | "* #\(.number) \(.title) by @\(.author.login)"')
+          fi
+          
+          # Create release notes
+          cat << EOF > release_notes.md
+          ## What's Changed
+          $PR_LIST
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.prev_tag.outputs.prev_tag }}...${{ steps.calc.outputs.next_tag }}
+          EOF
+
       - name: Create and push tag
         run: |
           git tag "${{ steps.calc.outputs.next_tag }}"
@@ -43,5 +68,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.calc.outputs.next_tag }}
-          generate_release_notes: true
+          body_path: release_notes.md
           name: "Release ${{ steps.calc.outputs.next_tag }}"
