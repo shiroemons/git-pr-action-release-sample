@@ -61,7 +61,7 @@ jobs:
           PR_LIST=""
           for commit in $COMMITS; do
             # Check if this is a merge commit from a PR
-            PR_NUM=$(git log -1 --pretty=format:"%s" $commit | grep -oE "Merge pull request #[0-9]+" | grep -oE "[0-9]+")
+            PR_NUM=$(git log -1 --pretty=format:"%s" $commit | grep -oE "Merge pull request #[0-9]+" | grep -oE "[0-9]+" || true)
             if [ -n "$PR_NUM" ]; then
               # Get PR details
               PR_INFO=$(gh pr view $PR_NUM --json number,title,author 2>/dev/null || echo "")
@@ -70,14 +70,15 @@ jobs:
                 PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.author.login')
                 # Skip Release PRs
                 if [[ ! "$PR_TITLE" =~ ^Release\ to ]]; then
-                  PR_LIST="$PR_LIST* #$PR_NUM $PR_TITLE by @$PR_AUTHOR\n"
+                  if [ -n "$PR_LIST" ]; then
+                    PR_LIST="${PR_LIST}"$'\n'"* #$PR_NUM $PR_TITLE by @$PR_AUTHOR"
+                  else
+                    PR_LIST="* #$PR_NUM $PR_TITLE by @$PR_AUTHOR"
+                  fi
                 fi
               fi
             fi
           done
-          
-          # Remove trailing newline
-          PR_LIST=$(echo -e "$PR_LIST" | sed '/^$/d')
           
           # Create release notes
           cat << EOF > release_notes.md
