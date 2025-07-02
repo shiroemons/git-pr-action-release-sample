@@ -26,18 +26,20 @@ jobs:
 
       - name: Create PR (develop -> staging)
         if: github.ref == 'refs/heads/develop'
-        run: git-pr-release --no-fetch
+        run: |
+          export GIT_PR_RELEASE_TITLE="Release STAGING 🚀 $(date +'%Y-%m-%d')"
+          git-pr-release --no-fetch
         env:
           GIT_PR_RELEASE_TOKEN: ${{ secrets.GIT_PR_RELEASE_TOKEN }}
           GIT_PR_RELEASE_BRANCH_PRODUCTION: staging
           GIT_PR_RELEASE_BRANCH_STAGING: develop
-          GIT_PR_RELEASE_TITLE: "Release STAGING 🚀 $(date +'%Y-%m-%d')"
 
       - name: Create PR (staging -> production)
         if: github.ref == 'refs/heads/staging'
-        run: git-pr-release --no-fetch
+        run: |
+          export GIT_PR_RELEASE_TITLE="Release PRODUCTION 🚢 $(date +'%Y-%m-%d')"
+          git-pr-release --no-fetch
         env:
           GIT_PR_RELEASE_TOKEN: ${{ secrets.GIT_PR_RELEASE_TOKEN }}
           GIT_PR_RELEASE_BRANCH_PRODUCTION: production
           GIT_PR_RELEASE_BRANCH_STAGING: staging
-          GIT_PR_RELEASE_TITLE: "Release PRODUCTION 🚢 $(date +'%Y-%m-%d')"
