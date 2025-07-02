@@ -15,6 +15,22 @@ app.get('/health', (c) => {
   return c.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/users', (c) => {
+  return c.json({
+    users: [
+      { id: 1, name: 'Alice', email: 'alice@example.com' },
+      { id: 2, name: 'Bob', email: 'bob@example.com' }
+    ]
+  });
+});
+
+app.get('/api/version', (c) => {
+  return c.json({
+    version: '1.1.0',
+    features: ['user-api', 'health-check']
+  });
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
