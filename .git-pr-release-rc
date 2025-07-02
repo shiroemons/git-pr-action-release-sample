@@ -1,0 +1,7 @@
+# PR作成設定
+[pr-title]
+  # develop → staging PRのタイトル
+  staging = "Release STAGING :rocket: <%= Time.at(Time.now, in: '+09:00').strftime('%Y-%m-%d') %>"
+  
+  # staging → production PRのタイトル
+  production = "Release PRODUCTION :ship: <%= Time.at(Time.now, in: '+09:00').strftime('%Y-%m-%d') %>"
