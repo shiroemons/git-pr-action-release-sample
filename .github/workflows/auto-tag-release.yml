@@ -1,0 +1,47 @@
+name: Auto Tag & Release
+
+on:
+  push:
+    branches: [production]
+
+jobs:
+  tag_and_release:
+    runs-on: ubuntu-latest
+    concurrency: production-tag
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set timezone to JST
+        run: sudo ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+      - name: Calculate next version tag
+        id: calc
+        run: |
+          today=$(date '+%Y%m%d')
+          last_same_day=$(git tag -l "${today}.*" | sort -V | tail -n1)
+          
+          if [ -z "$last_same_day" ]; then
+            next="${today}.0"
+          else
+            rev=${last_same_day##*.}
+            next="${today}.$((rev+1))"
+          fi
+          
+          echo "next_tag=$next" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+          git tag "${{ steps.calc.outputs.next_tag }}"
+          git push origin "${{ steps.calc.outputs.next_tag }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.calc.outputs.next_tag }}
+          generate_release_notes: true
+          name: "Release ${{ steps.calc.outputs.next_tag }}"

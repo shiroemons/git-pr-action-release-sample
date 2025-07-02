@@ -1,0 +1,36 @@
+{
+  "name": "git-pr-action-release-sample",
+  "version": "1.0.0",
+  "description": "Sample project for git-pr-release automation",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "hono": "^3.12.0", 
+    "@hono/node-server": "^1.8.0"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "eslint": "^8.40.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shiroemons/git-pr-action-release-sample.git"
+  },
+  "keywords": [
+    "git-pr-release",
+    "github-actions",
+    "automation",
+    "ci-cd"
+  ],
+  "author": "shiroemons",
+  "license": "MIT"
+}

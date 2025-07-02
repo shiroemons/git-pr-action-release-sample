@@ -1,0 +1,13 @@
+Release to STAGING: <%= Time.at(Time.now, in: '+09:00').strftime('%Y/%m/%d') %>
+
+## Changes
+
+<% pull_requests.each do |pr| -%>
+<%= pr.to_checklist_item %>
+<% end -%>
+
+## Testing
+
+- [ ] Staging環境での動作確認
+- [ ] 主要機能のテスト
+- [ ] パフォーマンステスト

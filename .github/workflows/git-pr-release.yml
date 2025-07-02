@@ -1,0 +1,41 @@
+name: Git PR Release
+
+on:
+  push:
+    branches:
+      - develop
+      - staging
+
+jobs:
+  git-pr-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GIT_PR_RELEASE_TOKEN }}
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.0
+          bundler-cache: true
+
+      - name: Install git-pr-release
+        run: gem install git-pr-release
+
+      - name: Create PR (develop -> staging)
+        if: github.ref == 'refs/heads/develop'
+        run: git-pr-release --no-fetch
+        env:
+          GIT_PR_RELEASE_TOKEN: ${{ secrets.GIT_PR_RELEASE_TOKEN }}
+          GIT_PR_RELEASE_BRANCH_PRODUCTION: staging
+          GIT_PR_RELEASE_BRANCH_STAGING: develop
+
+      - name: Create PR (staging -> production)
+        if: github.ref == 'refs/heads/staging'
+        run: git-pr-release --no-fetch
+        env:
+          GIT_PR_RELEASE_TOKEN: ${{ secrets.GIT_PR_RELEASE_TOKEN }}
+          GIT_PR_RELEASE_BRANCH_PRODUCTION: production
+          GIT_PR_RELEASE_BRANCH_STAGING: staging
