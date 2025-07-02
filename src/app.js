@@ -40,6 +40,19 @@ app.get('/api/metrics', (c) => {
   });
 });
 
+app.get('/api/config', (c) => {
+  return c.json({
+    app_name: 'git-pr-action-release-sample',
+    environment: process.env.NODE_ENV || 'development',
+    debug: process.env.DEBUG === 'true',
+    features: {
+      metrics: true,
+      users: true,
+      health: true
+    }
+  });
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
