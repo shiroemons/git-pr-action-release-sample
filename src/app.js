@@ -53,6 +53,18 @@ app.get('/api/config', (c) => {
   });
 });
 
+app.get('/api/status', (c) => {
+  return c.json({
+    status: 'operational',
+    services: {
+      api: 'up',
+      database: 'up',
+      cache: 'up'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
