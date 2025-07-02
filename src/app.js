@@ -31,6 +31,15 @@ app.get('/api/version', (c) => {
   });
 });
 
+app.get('/api/metrics', (c) => {
+  return c.json({
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    cpu: process.cpuUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {

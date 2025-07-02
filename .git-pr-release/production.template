@@ -1,21 +1,4 @@
 Release to PRODUCTION: <%= Time.at(Time.now, in: '+09:00').strftime('%Y/%m/%d') %>
-
-## Changes
-
 <% pull_requests.each do |pr| -%>
 <%= pr.to_checklist_item %>
 <% end -%>
-
-## Pre-Release Checklist
-
-- [ ] Staging環境での完全テスト完了
-- [ ] セキュリティチェック完了
-- [ ] バックアップ取得完了
-- [ ] ロールバック手順確認完了
-- [ ] 関係者への通知完了
-
-## Post-Release Tasks
-
-- [ ] 本番環境での動作確認
-- [ ] モニタリング・ログ確認
-- [ ] ユーザー影響の確認
