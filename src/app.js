@@ -65,6 +65,10 @@ app.get('/api/status', (c) => {
   });
 });
 
+app.get('/ping', (c) => {
+  return c.text('pong');
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
