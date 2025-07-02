@@ -6,6 +6,10 @@ on:
       - develop
       - staging
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   git-pr-release:
     runs-on: ubuntu-latest
@@ -18,11 +22,10 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.0
-          bundler-cache: true
+          ruby-version: '3.3'
 
       - name: Install git-pr-release
-        run: gem install git-pr-release
+        run: gem install --no-document git-pr-release
 
       - name: Create PR (develop -> staging)
         if: github.ref == 'refs/heads/develop'
@@ -31,6 +34,8 @@ jobs:
           GIT_PR_RELEASE_TOKEN: ${{ secrets.GIT_PR_RELEASE_TOKEN }}
           GIT_PR_RELEASE_BRANCH_PRODUCTION: staging
           GIT_PR_RELEASE_BRANCH_STAGING: develop
+          GIT_PR_RELEASE_TEMPLATE: ./.git-pr-release/staging.template
+          TZ: Asia/Tokyo
 
       - name: Create PR (staging -> production)
         if: github.ref == 'refs/heads/staging'
@@ -39,3 +44,5 @@ jobs:
           GIT_PR_RELEASE_TOKEN: ${{ secrets.GIT_PR_RELEASE_TOKEN }}
           GIT_PR_RELEASE_BRANCH_PRODUCTION: production
           GIT_PR_RELEASE_BRANCH_STAGING: staging
+          GIT_PR_RELEASE_TEMPLATE: ./.git-pr-release/production.template
+          TZ: Asia/Tokyo
