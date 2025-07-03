@@ -69,11 +69,6 @@ app.get('/ping', (c) => {
   return c.text('pong');
 });
 
-app.post('/echo', async (c) => {
-  const body = await c.req.json();
-  return c.json({ echo: body, timestamp: new Date().toISOString() });
-});
-
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
