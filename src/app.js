@@ -94,6 +94,17 @@ app.get('/system-info', (c) => {
   });
 });
 
+app.get('/debug', (c) => {
+  const debug = process.env.DEBUG === 'true';
+  return c.json({
+    debug_enabled: debug,
+    request_headers: Object.fromEntries(c.req.header()),
+    request_url: c.req.url,
+    request_method: c.req.method,
+    timestamp: new Date().toISOString()
+  });
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
