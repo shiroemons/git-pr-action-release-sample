@@ -40,6 +40,15 @@ jobs:
           prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           echo "prev_tag=$prev_tag" >> $GITHUB_OUTPUT
 
+      - name: Check if first automated release
+        id: check_release
+        run: |
+          # Check if any releases exist (for first automated release notes)
+          RELEASE_COUNT=$(gh release list --limit 1 --json tagName | jq length)
+          echo "is_first_automated_release=$([ $RELEASE_COUNT -eq 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Generate release notes
         id: release_notes
         env:
@@ -48,45 +57,57 @@ jobs:
           # Get the merge commit that triggered this workflow
           CURRENT_SHA="${{ github.sha }}"
           
-          # Get PRs between tags
-          if [ -z "${{ steps.prev_tag.outputs.prev_tag }}" ]; then
-            # First release - get all commits
-            COMMITS=$(git log --pretty=format:"%H" $CURRENT_SHA)
-          else
-            # Get commits between previous tag and current
-            COMMITS=$(git log --pretty=format:"%H" ${{ steps.prev_tag.outputs.prev_tag }}..$CURRENT_SHA)
-          fi
+          # Check if this is the first automated release notes
+          if [ "${{ steps.check_release.outputs.is_first_automated_release }}" = "true" ]; then
+            # First automated release notes - create simple message to avoid overwhelming changelog
+            cat << EOF > release_notes.md
+          ## What's Changed
           
-          # Find PRs from commit messages
-          PR_LIST=""
-          for commit in $COMMITS; do
-            # Check if this is a merge commit from a PR
-            PR_NUM=$(git log -1 --pretty=format:"%s" $commit | grep -oE "Merge pull request #[0-9]+" | grep -oE "[0-9]+" || true)
-            if [ -n "$PR_NUM" ]; then
-              # Get PR details
-              PR_INFO=$(gh pr view $PR_NUM --json number,title,author 2>/dev/null || echo "")
-              if [ -n "$PR_INFO" ]; then
-                PR_TITLE=$(echo "$PR_INFO" | jq -r '.title')
-                PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.author.login')
-                # Skip Release PRs
-                if [[ ! "$PR_TITLE" =~ ^Release\ to ]]; then
-                  if [ -n "$PR_LIST" ]; then
-                    PR_LIST="${PR_LIST}"$'\n'"* #$PR_NUM $PR_TITLE by @$PR_AUTHOR"
-                  else
-                    PR_LIST="* #$PR_NUM $PR_TITLE by @$PR_AUTHOR"
+          First automated release notes. Previous changes are not included to keep this concise.
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ steps.calc.outputs.next_tag }}
+          EOF
+          else
+            # Get PRs between tags
+            if [ -z "${{ steps.prev_tag.outputs.prev_tag }}" ]; then
+              # No previous tag but releases exist - get recent commits (last 50)
+              COMMITS=$(git log --pretty=format:"%H" -50 $CURRENT_SHA)
+            else
+              # Get commits between previous tag and current
+              COMMITS=$(git log --pretty=format:"%H" ${{ steps.prev_tag.outputs.prev_tag }}..$CURRENT_SHA)
+            fi
+            
+            # Find PRs from commit messages
+            PR_LIST=""
+            for commit in $COMMITS; do
+              # Check if this is a merge commit from a PR
+              PR_NUM=$(git log -1 --pretty=format:"%s" $commit | grep -oE "Merge pull request #[0-9]+" | grep -oE "[0-9]+" || true)
+              if [ -n "$PR_NUM" ]; then
+                # Get PR details
+                PR_INFO=$(gh pr view $PR_NUM --json number,title,author 2>/dev/null || echo "")
+                if [ -n "$PR_INFO" ]; then
+                  PR_TITLE=$(echo "$PR_INFO" | jq -r '.title')
+                  PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.author.login')
+                  # Skip Release PRs
+                  if [[ ! "$PR_TITLE" =~ ^Release\ to ]]; then
+                    if [ -n "$PR_LIST" ]; then
+                      PR_LIST="${PR_LIST}"$'\n'"* #$PR_NUM $PR_TITLE by @$PR_AUTHOR"
+                    else
+                      PR_LIST="* #$PR_NUM $PR_TITLE by @$PR_AUTHOR"
+                    fi
                   fi
                 fi
               fi
-            fi
-          done
-          
-          # Create release notes
-          cat << EOF > release_notes.md
+            done
+            
+            # Create release notes
+            cat << EOF > release_notes.md
           ## What's Changed
           $PR_LIST
           
           **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.prev_tag.outputs.prev_tag }}...${{ steps.calc.outputs.next_tag }}
           EOF
+          fi
 
       - name: Create and push tag
         run: |
@@ -99,3 +120,4 @@ jobs:
           tag_name: ${{ steps.calc.outputs.next_tag }}
           body_path: release_notes.md
           name: "${{ steps.calc.outputs.next_tag }}"
+
