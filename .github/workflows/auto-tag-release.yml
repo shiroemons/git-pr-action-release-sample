@@ -98,4 +98,4 @@ jobs:
         with:
           tag_name: ${{ steps.calc.outputs.next_tag }}
           body_path: release_notes.md
-          name: "Release ${{ steps.calc.outputs.next_tag }}"
+          name: "${{ steps.calc.outputs.next_tag }}"
