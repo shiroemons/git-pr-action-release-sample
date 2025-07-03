@@ -82,6 +82,18 @@ app.get('/uptime', (c) => {
   });
 });
 
+app.get('/system-info', (c) => {
+  return c.json({
+    node_version: process.version,
+    platform: process.platform,
+    arch: process.arch,
+    pid: process.pid,
+    environment: process.env.NODE_ENV || 'development',
+    memory_usage: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
