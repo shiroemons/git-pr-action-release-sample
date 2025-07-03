@@ -74,6 +74,14 @@ app.post('/echo', async (c) => {
   return c.json({ echo: body, timestamp: new Date().toISOString() });
 });
 
+app.get('/uptime', (c) => {
+  return c.json({
+    uptime_seconds: process.uptime(),
+    uptime_human: new Date(process.uptime() * 1000).toISOString().substr(11, 8),
+    start_time: new Date(Date.now() - process.uptime() * 1000).toISOString()
+  });
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
