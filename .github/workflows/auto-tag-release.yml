@@ -134,8 +134,10 @@ jobs:
                               if [ -n "$INNER_PR_INFO" ]; then
                                 INNER_PR_TITLE=$(echo "$INNER_PR_INFO" | jq -r '.title')
                                 INNER_PR_AUTHOR=$(echo "$INNER_PR_INFO" | jq -r '.author.login')
-                                # Don't skip any PRs from within Release PRs
-                                add_pr_to_list "$INNER_PR_NUM" "#$INNER_PR_NUM $INNER_PR_TITLE" "$INNER_PR_AUTHOR"
+                                # Skip Release PRs even when found inside other Release PRs
+                                if [[ ! "$INNER_PR_TITLE" =~ ^Release\ to ]]; then
+                                  add_pr_to_list "$INNER_PR_NUM" "#$INNER_PR_NUM $INNER_PR_TITLE" "$INNER_PR_AUTHOR"
+                                fi
                               fi
                             fi
                           done
