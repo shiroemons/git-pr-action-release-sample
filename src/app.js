@@ -105,6 +105,29 @@ app.get('/debug', (c) => {
   });
 });
 
+app.get('/api/posts', (c) => {
+  return c.json({
+    posts: [
+      { id: 1, title: 'First Post', author: 'Alice', created_at: '2025-01-01T00:00:00Z' },
+      { id: 2, title: 'Second Post', author: 'Bob', created_at: '2025-01-02T00:00:00Z' },
+      { id: 3, title: 'Third Post', author: 'Charlie', created_at: '2025-01-03T00:00:00Z' }
+    ],
+    total: 3,
+    page: 1,
+    per_page: 10
+  });
+});
+
+app.get('/api/comments', (c) => {
+  return c.json({
+    comments: [
+      { id: 1, post_id: 1, author: 'Dave', content: 'Great post!', created_at: '2025-01-01T12:00:00Z' },
+      { id: 2, post_id: 1, author: 'Eve', content: 'Thanks for sharing', created_at: '2025-01-01T13:00:00Z' }
+    ],
+    total: 2
+  });
+});
+
 const port = process.env.PORT || 3000;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
