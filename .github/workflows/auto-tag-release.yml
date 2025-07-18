@@ -79,22 +79,72 @@ jobs:
             
             # Find PRs from commit messages
             PR_LIST=""
+            SEEN_PRS=""
+            
+            # Function to add PR to list if not already seen
+            add_pr_to_list() {
+              local pr_num=$1
+              local pr_title=$2
+              local pr_author=$3
+              
+              # Skip if we've already seen this PR
+              if [[ "$SEEN_PRS" =~ ":$pr_num:" ]]; then
+                return
+              fi
+              
+              # Add to seen list
+              SEEN_PRS="${SEEN_PRS}:$pr_num:"
+              
+              # Add to PR list
+              if [ -n "$PR_LIST" ]; then
+                PR_LIST="${PR_LIST}"$'\n'"* $pr_title by @$pr_author"
+              else
+                PR_LIST="* $pr_title by @$pr_author"
+              fi
+            }
+            
             for commit in $COMMITS; do
               # Check if this is a merge commit from a PR
               PR_NUM=$(git log -1 --pretty=format:"%s" $commit | grep -oE "Merge pull request #[0-9]+" | grep -oE "[0-9]+" || true)
               if [ -n "$PR_NUM" ]; then
                 # Get PR details
-                PR_INFO=$(gh pr view $PR_NUM --json number,title,author 2>/dev/null || echo "")
+                PR_INFO=$(gh pr view $PR_NUM --json number,title,author,mergeCommit 2>/dev/null || echo "")
                 if [ -n "$PR_INFO" ]; then
                   PR_TITLE=$(echo "$PR_INFO" | jq -r '.title')
                   PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.author.login')
-                  # Skip Release PRs
-                  if [[ ! "$PR_TITLE" =~ ^Release\ to ]]; then
-                    if [ -n "$PR_LIST" ]; then
-                      PR_LIST="${PR_LIST}"$'\n'"* #$PR_NUM $PR_TITLE by @$PR_AUTHOR"
-                    else
-                      PR_LIST="* #$PR_NUM $PR_TITLE by @$PR_AUTHOR"
+                  
+                  # Check if this is a Release PR
+                  if [[ "$PR_TITLE" =~ ^Release\ to ]]; then
+                    # For Release PRs, extract PRs merged into it
+                    MERGE_COMMIT=$(echo "$PR_INFO" | jq -r '.mergeCommit.oid // empty')
+                    if [ -n "$MERGE_COMMIT" ]; then
+                      # Get the parent commits of the merge
+                      PARENTS=$(git rev-parse $MERGE_COMMIT^@ 2>/dev/null || echo "")
+                      if [ -n "$PARENTS" ]; then
+                        # Get commits between the two parents (what was merged)
+                        PARENT_ARRAY=($PARENTS)
+                        if [ ${#PARENT_ARRAY[@]} -eq 2 ]; then
+                          RELEASE_COMMITS=$(git log --pretty=format:"%H" ${PARENT_ARRAY[1]}..${PARENT_ARRAY[0]} 2>/dev/null || echo "")
+                          
+                          # Extract PRs from these commits
+                          for release_commit in $RELEASE_COMMITS; do
+                            INNER_PR_NUM=$(git log -1 --pretty=format:"%s" $release_commit | grep -oE "Merge pull request #[0-9]+" | grep -oE "[0-9]+" || true)
+                            if [ -n "$INNER_PR_NUM" ]; then
+                              INNER_PR_INFO=$(gh pr view $INNER_PR_NUM --json number,title,author 2>/dev/null || echo "")
+                              if [ -n "$INNER_PR_INFO" ]; then
+                                INNER_PR_TITLE=$(echo "$INNER_PR_INFO" | jq -r '.title')
+                                INNER_PR_AUTHOR=$(echo "$INNER_PR_INFO" | jq -r '.author.login')
+                                # Don't skip any PRs from within Release PRs
+                                add_pr_to_list "$INNER_PR_NUM" "#$INNER_PR_NUM $INNER_PR_TITLE" "$INNER_PR_AUTHOR"
+                              fi
+                            fi
+                          done
+                        fi
+                      fi
                     fi
+                  else
+                    # For non-Release PRs, add them directly
+                    add_pr_to_list "$PR_NUM" "#$PR_NUM $PR_TITLE" "$PR_AUTHOR"
                   fi
                 fi
               fi
@@ -120,4 +170,3 @@ jobs:
           tag_name: ${{ steps.calc.outputs.next_tag }}
           body_path: release_notes.md
           name: "${{ steps.calc.outputs.next_tag }}"
-
