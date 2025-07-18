@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
+import { logger } from 'hono/logger';
 
 const app = new Hono();
+
+// Add logging middleware
+app.use('*', logger());
 
 // Global error handler
 app.onError((err, c) => {
