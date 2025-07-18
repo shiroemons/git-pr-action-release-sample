@@ -3,6 +3,28 @@ import { serve } from '@hono/node-server';
 
 const app = new Hono();
 
+// Global error handler
+app.onError((err, c) => {
+  console.error(`Error: ${err.message}`);
+  return c.json({
+    error: {
+      message: err.message || 'Internal Server Error',
+      timestamp: new Date().toISOString()
+    }
+  }, 500);
+});
+
+// Not found handler
+app.notFound((c) => {
+  return c.json({
+    error: {
+      message: 'Route not found',
+      path: c.req.url,
+      timestamp: new Date().toISOString()
+    }
+  }, 404);
+});
+
 app.get('/', (c) => {
   return c.json({
     message: 'Hello World!',
